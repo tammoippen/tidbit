@@ -15,6 +15,7 @@
  */
 
 #include QMK_KEYBOARD_H
+#include "action_layer.h"
 
 #define _BASE 0
 #define _FUNC 1
@@ -25,29 +26,39 @@ enum custom_keycodes {
     PROG = SAFE_RANGE,
 };
 
+enum td_keycodes {
+    TD_ENTER_LAYER
+};
+
+// Tap Dance definitions
+qk_tap_dance_action_t tap_dance_actions[] = {
+    // Tap once for KP_ENTER, twice for _FUNC layer
+    [TD_ENTER_LAYER] = ACTION_TAP_DANCE_LAYER_TOGGLE(KC_KP_ENTER, 1),
+};
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   // Base layer (numpad)
   [_BASE] = LAYOUT(
-             KC_KP_SLASH, KC_KP_ASTERISK, KC_KP_MINUS,
-  KC_KP_7,   KC_KP_8,     KC_KP_9,        KC_KP_PLUS,
-  KC_KP_4,   KC_KP_5,     KC_KP_6,        KC_KP_PLUS,
-  KC_KP_1,   KC_KP_2,     KC_KP_3,        KC_KP_ENTER,
-  TO(_FUNC), KC_KP_0,     KC_KP_DOT,      KC_KP_ENTER
+               KC_KP_SLASH, KC_KP_ASTERISK, KC_KP_MINUS,
+  KC_KP_7,     KC_KP_8,     KC_KP_9,        KC_KP_PLUS,
+  KC_KP_4,     KC_KP_5,     KC_KP_6,        KC_NO,
+  KC_KP_1,     KC_KP_2,     KC_KP_3,        TD(TD_ENTER_LAYER),
+  KC_NUM_LOCK, KC_KP_0,     KC_KP_DOT,      KC_NO
   ),
 
   // Function layer (numpad)
   [_FUNC] = LAYOUT(
-               PROG, KC_NO,   KC_NO,
-    KC_NO,     KC_NO, RGB_MOD, KC_NO,
-    KC_NO,     KC_NO, RGB_HUI, KC_NO,
-    KC_NO,     KC_NO, RGB_SAI, KC_NO,
-    TO(_BASE), KC_NO, RGB_VAI, KC_NO
+           KC_NO, RGB_TOG, KC_NO,
+    KC_NO, KC_NO, RGB_MOD, KC_NO,
+    KC_NO, KC_NO, RGB_HUI, KC_NO,
+    KC_NO, KC_NO, RGB_SAI, TO(_BASE),
+    PROG,  KC_NO, RGB_VAI, KC_NO
   ),
 };
 
 void matrix_init_user(void) {
     matrix_init_remote_kb();
-    register_code(KC_NLCK);
+    register_code(KC_NUM_LOCK);
 }
 
 void matrix_scan_user(void) {
@@ -57,13 +68,13 @@ void matrix_scan_user(void) {
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     process_record_remote_kb(keycode, record);
 
-    if (!numlock_set && record->event.pressed) {
-        led_t led_state = host_keyboard_led_state();
-        if (!led_state.num_lock) {
-            register_code(KC_NLCK);
-        }
-        numlock_set = true;
-    }
+    // if (!numlock_set && record->event.pressed) {
+    //     led_t led_state = host_keyboard_led_state();
+    //     if (!led_state.num_lock) {
+    //         register_code(KC_NUM_LOCK);
+    //     }
+    //     numlock_set = true;
+    // }
 
     switch (keycode) {
         case PROG:
@@ -82,9 +93,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 bool encoder_update_user(uint8_t index, bool clockwise) {
     if (clockwise) {
-        tap_code(KC_VOLU);
+        tap_code(KC_PAGE_UP);
     } else {
-        tap_code(KC_VOLD);
+        tap_code(KC_PAGE_DOWN);
     }
     return true;
 }
@@ -95,3 +106,10 @@ void led_set_kb(uint8_t usb_led) {
     else
         set_bitc_LED(LED_DIM);
 }
+
+// void keyboard_post_init_user(void) {
+//     debug_enable=true;
+//     debug_matrix=true;
+//     debug_keyboard=true;
+//     //debug_mouse=true;
+// }
